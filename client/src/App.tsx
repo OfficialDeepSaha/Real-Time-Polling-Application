@@ -14,8 +14,9 @@ import NotFound from "@/pages/not-found";
 
 // Navigation Header Component
 function NavigationHeader() {
-  const { currentUser } = useUser();
+  const { currentUser, logout } = useUser();
   const [showUserSelector, setShowUserSelector] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
     <>
@@ -38,13 +39,26 @@ function NavigationHeader() {
                 <span className="text-muted-foreground">Connected</span>
               </div>
               <div className="relative">
-                <button 
-                  onClick={() => setShowUserSelector(true)}
-                  className="bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/80 transition-colors"
-                  data-testid="button-user-menu"
-                >
-                  <span>{currentUser ? currentUser.name : 'Select User'}</span>
-                </button>
+                {currentUser ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">Welcome, {currentUser.name}</span>
+                    <button 
+                      onClick={logout}
+                      className="bg-secondary text-secondary-foreground px-3 py-1 rounded-md hover:bg-secondary/80 transition-colors text-sm"
+                      data-testid="button-logout"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setShowUserSelector(true)}
+                    className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                    data-testid="button-select-user"
+                  >
+                    Select User
+                  </button>
+                )}
               </div>
             </div>
           </div>
