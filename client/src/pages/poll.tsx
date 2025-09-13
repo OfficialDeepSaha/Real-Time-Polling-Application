@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getPoll, getPollResults, createVote } from "@/lib/api";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/contexts/UserContext";
-import { UserSelector } from "@/components/UserSelector";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { Link2, Twitter, Facebook, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
@@ -15,10 +14,9 @@ import { useEffect, useState } from "react";
 export default function PollPage() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { currentUser } = useUser();
   const [hasVoted, setHasVoted] = useState(false);
-  const [showUserSelector, setShowUserSelector] = useState(!currentUser);
 
   const { data: poll, isLoading: isPollLoading } = useQuery({
     queryKey: ['/api/polls', id],
@@ -46,16 +44,11 @@ export default function PollPage() {
   }, [pollResults, id, queryClient]);
 
   const voteMutation = useMutation({
-    mutationFn: (pollOptionId: string) => {
-      if (!currentUser) {
-        throw new Error("Please select a user first");
-      }
-      return createVote({
-        userId: currentUser.id,
-        pollOptionId,
-        pollId: id!,
-      });
-    },
+    mutationFn: (pollOptionId: string) => createVote({
+      userId: user!.id,
+      pollOptionId,
+      pollId: id!,
+    }),
     onSuccess: () => {
       setHasVoted(true);
       queryClient.invalidateQueries({ queryKey: ['/api/polls', id, 'results'] });
@@ -115,10 +108,8 @@ export default function PollPage() {
   }
 
   return (
-    <>
-      <UserSelector open={showUserSelector} onClose={() => setShowUserSelector(false)} />
-      <div className="min-h-screen bg-background">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <Link href="/">
             <Button variant="ghost" className="text-muted-foreground hover:text-foreground" data-testid="button-back">
@@ -167,15 +158,7 @@ export default function PollPage() {
                     className={`border border-border rounded-lg p-4 transition-all cursor-pointer hover:bg-secondary/50 ${
                       voteMutation.isPending ? 'opacity-50' : ''
                     }`}
-                    onClick={() => {
-                      if (!currentUser) {
-                        setShowUserSelector(true);
-                        return;
-                      }
-                      if (!hasVoted && !voteMutation.isPending) {
-                        voteMutation.mutate(option.id);
-                      }
-                    }}
+                    onClick={() => !hasVoted && !voteMutation.isPending && voteMutation.mutate(option.id)}
                     data-testid={`option-${option.id}`}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -263,9 +246,8 @@ export default function PollPage() {
               </div>
             </div>
           </CardContent>
-          </Card>
-        </div>
+        </Card>
       </div>
-    </>
+    </div>
   );
 }

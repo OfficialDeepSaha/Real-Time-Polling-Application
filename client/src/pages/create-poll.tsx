@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,9 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createPoll } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/contexts/UserContext";
-import { UserSelector } from "@/components/UserSelector";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Trash2, Save, Rocket } from "lucide-react";
+import { useState } from "react";
 
 const createPollSchema = z.object({
   question: z.string().min(1, "Poll question is required"),
@@ -27,8 +26,7 @@ export default function CreatePoll() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { currentUser } = useUser();
-  const [showUserSelector, setShowUserSelector] = useState(!currentUser);
+  const { user } = useAuth();
 
   const form = useForm<CreatePollForm>({
     resolver: zodResolver(createPollSchema),
@@ -46,12 +44,12 @@ export default function CreatePoll() {
 
   const createPollMutation = useMutation({
     mutationFn: (data: CreatePollForm) => {
-      if (!currentUser) {
-        throw new Error("Please select a user first");
+      if (!user) {
+        throw new Error("User not authenticated");
       }
       return createPoll({
         ...data,
-        userId: currentUser.id,
+        userId: user.id,
       });
     },
     onSuccess: () => {
@@ -72,10 +70,6 @@ export default function CreatePoll() {
   });
 
   const onSubmit = (data: CreatePollForm) => {
-    if (!currentUser) {
-      setShowUserSelector(true);
-      return;
-    }
     createPollMutation.mutate(data);
   };
 
@@ -90,9 +84,7 @@ export default function CreatePoll() {
   };
 
   return (
-    <>
-      <UserSelector open={showUserSelector} onClose={() => setShowUserSelector(false)} />
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card className="bg-card border border-border">
             <CardContent className="p-8">
@@ -247,6 +239,5 @@ export default function CreatePoll() {
           </Card>
         </div>
       </div>
-    </>
   );
 }

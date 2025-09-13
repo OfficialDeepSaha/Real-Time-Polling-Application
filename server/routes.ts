@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import passport from "./auth";
+import { generateToken, authenticateToken, optionalAuth } from "./auth";
 import { storage } from "./storage";
 import { insertUserSchema, insertPollSchema, insertVoteSchema, type User } from "@shared/schema";
 import { ZodError } from "zod";
@@ -85,6 +87,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   };
 
+  // Authentication routes
+  app.get('/auth/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+  }));
+
+  app.get('/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+      // Successful authentication
+      const user = req.user as User;
+      const token = generateToken(user);
+      
+      // Set token in cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      });
+      
+      // Redirect to frontend
+      res.redirect('/');
+    }
+  );
+
+  app.post('/auth/logout', (req, res) => {
+    res.clearCookie('token');
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Logout failed' });
+      }
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+
+  app.get('/auth/me', authenticateToken, async (req, res) => {
+    try {
+      const user = await storage.getUser((req.user as User).id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      const { passwordHash, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  app.get('/auth/status', optionalAuth, (req, res) => {
+    res.json({ 
+      isAuthenticated: !!req.user,
+      user: req.user || null
+    });
+  });
+
   // User routes
   app.get('/api/users', async (req, res) => {
     try {
@@ -146,14 +202,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Poll routes
   app.post('/api/polls', async (req, res) => {
     try {
-      const pollData = insertPollSchema.parse(req.body);
-      const userId = req.body.userId; // In real app, get from session/auth
+      const { userId, ...pollData } = req.body;
       
       if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
       }
 
-      const poll = await storage.createPoll(pollData, userId);
+      // Validate poll data without creatorId (it's set in storage layer)
+      const validatedPollData = insertPollSchema.parse(pollData);
+      
+      const poll = await storage.createPoll(validatedPollData, userId);
       res.status(201).json(poll);
     } catch (error) {
       handleError(error, res);

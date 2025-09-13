@@ -24,7 +24,7 @@ export function UserSelector({ open, onClose }: UserSelectorProps) {
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
-    passwordHash: 'placeholder123' // Temporary until auth is implemented
+    passwordHash: 'defaultpassword123' // For demo purposes
   });
 
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
@@ -160,11 +160,6 @@ export function UserSelector({ open, onClose }: UserSelectorProps) {
                   placeholder="Enter your email"
                   data-testid="input-new-user-email"
                 />
-              </div>
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-                <p className="text-yellow-800 text-xs">
-                  Note: This is a demo app. No real password required for now.
-                </p>
               </div>
               <Button
                 onClick={handleCreateUser}

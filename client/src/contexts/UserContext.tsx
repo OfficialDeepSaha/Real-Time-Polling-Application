@@ -1,10 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getUser, type User } from '@/lib/api';
+import type { User } from '@/lib/api';
 
 interface UserContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
-  logout: () => void;
   isLoading: boolean;
 }
 
@@ -15,20 +14,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load user from localStorage and rehydrate
+    // Try to load user from localStorage
     const savedUserId = localStorage.getItem('currentUserId');
     if (savedUserId) {
-      getUser(savedUserId)
-        .then((user) => {
-          setCurrentUser(user);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.warn('Failed to rehydrate user:', error);
-          // Clear invalid user ID from localStorage
-          localStorage.removeItem('currentUserId');
-          setIsLoading(false);
-        });
+      // In a real app, you'd fetch the user from the API
+      // For now, we'll let the user select again
+      setIsLoading(false);
     } else {
       setIsLoading(false);
     }
@@ -43,13 +34,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUser]);
 
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('currentUserId');
-  };
-
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser, logout, isLoading }}>
+    <UserContext.Provider value={{ currentUser, setCurrentUser, isLoading }}>
       {children}
     </UserContext.Provider>
   );

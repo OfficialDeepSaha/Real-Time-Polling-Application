@@ -64,6 +64,7 @@ export const insertPollSchema = createInsertSchema(polls).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  creatorId: true,
 }).extend({
   options: z.array(z.object({ text: z.string().min(1) })).min(2),
 });
