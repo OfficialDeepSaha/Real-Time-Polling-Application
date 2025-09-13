@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { createPoll } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
+import { UserSelector } from "@/components/UserSelector";
 import { Plus, Trash2, Save, Rocket } from "lucide-react";
 
 const createPollSchema = z.object({
@@ -25,6 +27,8 @@ export default function CreatePoll() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentUser } = useUser();
+  const [showUserSelector, setShowUserSelector] = useState(!currentUser);
 
   const form = useForm<CreatePollForm>({
     resolver: zodResolver(createPollSchema),
@@ -41,10 +45,15 @@ export default function CreatePoll() {
   });
 
   const createPollMutation = useMutation({
-    mutationFn: (data: CreatePollForm) => createPoll({
-      ...data,
-      userId: "temp-user-id", // In real app, get from auth context
-    }),
+    mutationFn: (data: CreatePollForm) => {
+      if (!currentUser) {
+        throw new Error("Please select a user first");
+      }
+      return createPoll({
+        ...data,
+        userId: currentUser.id,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/polls'] });
       toast({
@@ -63,6 +72,10 @@ export default function CreatePoll() {
   });
 
   const onSubmit = (data: CreatePollForm) => {
+    if (!currentUser) {
+      setShowUserSelector(true);
+      return;
+    }
     createPollMutation.mutate(data);
   };
 
@@ -77,10 +90,12 @@ export default function CreatePoll() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card className="bg-card border border-border">
-          <CardContent className="p-8">
+    <>
+      <UserSelector open={showUserSelector} onClose={() => setShowUserSelector(false)} />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-8">
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-foreground mb-2">Create New Poll</h2>
               <p className="text-muted-foreground">Design your poll question and options for real-time voting</p>
@@ -229,8 +244,9 @@ export default function CreatePoll() {
               </form>
             </Form>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

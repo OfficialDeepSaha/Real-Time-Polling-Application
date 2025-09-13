@@ -69,6 +69,11 @@ export async function createUser(userData: CreateUserData): Promise<User> {
   return response.json();
 }
 
+export async function getUsers(): Promise<User[]> {
+  const response = await apiRequest('GET', '/api/users');
+  return response.json();
+}
+
 export async function getUser(id: string): Promise<User> {
   const response = await apiRequest('GET', `/api/users/${id}`);
   return response.json();

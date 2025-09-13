@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertUserSchema, insertPollSchema, insertVoteSchema } from "@shared/schema";
+import { insertUserSchema, insertPollSchema, insertVoteSchema, type User } from "@shared/schema";
 import { ZodError } from "zod";
 import bcrypt from "bcrypt";
 
@@ -86,6 +86,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // User routes
+  app.get('/api/users', async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const usersResponse = allUsers.map((user: User) => {
+        const { passwordHash, ...userResponse } = user;
+        return userResponse;
+      });
+      res.json(usersResponse);
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
   app.post('/api/users', async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
