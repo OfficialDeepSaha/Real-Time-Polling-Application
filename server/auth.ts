@@ -10,8 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'sk_prod_9a8b7c6d5e4f3g2h1i0j9k8l7m
 const JWT_EXPIRES_IN = '7d';
 
 // Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '519686378035-ks6adkrlas5p4ptqohe8duq3uekbq8i1.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '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';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/auth/google/callback';
 
 // Configure Google OAuth strategy
