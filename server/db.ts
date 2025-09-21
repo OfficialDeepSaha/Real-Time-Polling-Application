@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@shared/schema";
 
-// Load environment variables from .env file
+// Load environment variables from .env file with explicit path
 config();
 
 /**
